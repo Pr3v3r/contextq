@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import UploadSection from "@/components/UploadSection";
+import Sidebar from "@/components/Sidebar";
+import DocumentList from "@/components/DocumentList";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -10,14 +11,17 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="w-full max-w-2xl flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold">Welcome to ContextQ</h1>
-          <p className="text-zinc-500">{session.user?.email}</p>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar />
+      <main className="flex-1 p-8 md:ml-0">
+        <div className="max-w-3xl mx-auto flex flex-col gap-8">
+          <div>
+            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <p className="text-muted">{session.user?.email}</p>
+          </div>
+          <DocumentList />
         </div>
-        <UploadSection />
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
