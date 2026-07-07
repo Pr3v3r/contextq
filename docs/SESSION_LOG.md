@@ -144,3 +144,42 @@ A running learning diary for building ContextQ, June 23 – July 21, 2026.
   a manual toggle button?
 
 ---
+
+## Day 6 — July 7, 2026
+**Task completed:** FastAPI scaffold, health endpoint, Docker Compose with FastAPI + ChromaDB
+
+**Concepts learned:**
+- FastAPI: Python web framework for building APIs, needs Uvicorn as the ASGI
+  server to actually run and listen for requests
+- Docker Compose: orchestrates multiple services together with one command,
+  defines dependencies between services (FastAPI depends_on ChromaDB)
+- Docker volumes: bind mounts (./backend:/app) sync local code into container
+  for hot reload; named volumes (chroma_data) persist data across container
+  restarts
+- Docker internal networking: containers talk to each other using service names
+  as hostnames (chromadb:8000), not localhost — localhost inside a container
+  refers to itself
+- Port mapping: 8001:8000 means Mac sees port 8001, container uses 8000
+  internally; container-to-container traffic uses the internal port directly
+- CORS middleware: browser blocks cross-origin requests by default (Same-Origin
+  Policy), CORS tells FastAPI to allow requests from localhost:3000
+- Dockerfile layer caching: COPY requirements.txt before COPY . . so package
+  installs are cached and only re-run when requirements change, not on every
+  code change
+- Switched from OpenAI to Gemini API: free tier, no billing, same RAG pipeline
+  logic, just different API calls
+
+**Bugs faced + how fixed:**
+- ChromaDB image pull timing out repeatedly → pulled image separately with
+  docker pull first, then ran docker compose up --build
+
+**Interview questions I can now answer:**
+- What does Docker Compose do and why use it over separate docker run commands?
+- What is the difference between a bind mount and a named volume?
+- Why do containers use service names instead of localhost to communicate?
+- What is CORS and why does a browser enforce it?
+- What is an ASGI server and why does FastAPI need one?
+
+**What to pick up next session (Day 7):**
+- PDF processing endpoint in FastAPI — receive uploaded PDF, chunk with
+  LangChain RecursiveCharacterTextSplitter, log chunks to console
