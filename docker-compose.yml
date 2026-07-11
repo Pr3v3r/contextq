@@ -17,5 +17,17 @@ services:
     volumes:
       - chroma_data:/chroma/chroma
 
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: contextq
+      POSTGRES_PASSWORD: contextq
+      POSTGRES_DB: contextq
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 volumes:
   chroma_data:
+  postgres_data:

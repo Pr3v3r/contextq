@@ -5,6 +5,6 @@ langchain
 langchain-community
 langchain-text-splitters
 pypdf
-google-generativeai
+google-genai
 chromadb
 python-dotenv
