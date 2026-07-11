@@ -183,3 +183,39 @@ A running learning diary for building ContextQ, June 23 – July 21, 2026.
 **What to pick up next session (Day 7):**
 - PDF processing endpoint in FastAPI — receive uploaded PDF, chunk with
   LangChain RecursiveCharacterTextSplitter, log chunks to console
+
+  ## Day 7 — July 8, 2026
+**Task completed:** PDF processing endpoint — text extraction + chunking
+
+**Concepts learned:**
+- pypdf: extracts raw text from PDFs page by page, skips images entirely
+- io.BytesIO: wraps raw bytes in a file-like interface so libraries like pypdf
+  can read uploaded files directly from memory without saving to disk first
+- RecursiveCharacterTextSplitter: splits text into overlapping chunks,
+  chunk_size=1000 characters, chunk_overlap=200 so boundary sentences
+  aren't cut in half and lose meaning
+- Why chunking: context window limits + relevance — sending only relevant
+  chunks gives sharper answers than dumping the entire document
+- LangChain package restructure: RecursiveCharacterTextSplitter moved from
+  langchain.text_splitter to langchain_text_splitters in newer versions
+- Docker cache gotcha: if requirements.txt appears unchanged to Docker,
+  pip install layer is cached and new packages aren't installed — need
+  --no-cache flag to force full rebuild
+- Page metadata in chunks: we prefix each page's text with [Page N] so
+  later we can show users which page the answer came from (citations)
+
+**Bugs faced + how fixed:**
+- ModuleNotFoundError: langchain.text_splitter → updated import to
+  langchain_text_splitters, forced --no-cache rebuild
+- Docker kept using cached pip install layer despite requirements.txt change →
+  used docker compose build --no-cache to bypass cache
+
+**Interview questions I can now answer:**
+- What is chunking and why is it necessary for RAG?
+- What does chunk_overlap do and why is it important?
+- Why use io.BytesIO instead of saving the file to disk first?
+- How does Docker layer caching work and when does it cause problems?
+
+**What to pick up next session (Day 8):**
+- Gemini embeddings — embed each chunk, store in ChromaDB with
+  document_id and page metadata
