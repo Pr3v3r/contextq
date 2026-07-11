@@ -219,3 +219,43 @@ A running learning diary for building ContextQ, June 23 – July 21, 2026.
 **What to pick up next session (Day 8):**
 - Gemini embeddings — embed each chunk, store in ChromaDB with
   document_id and page metadata
+
+  ## Day 8 — July 11, 2026
+**Task completed:** Gemini embeddings + ChromaDB storage
+
+**Concepts learned:**
+- Embeddings: vectors of numbers representing semantic meaning of text.
+  Semantically similar text produces numerically close vectors. This is
+  how similarity search works — closest vector = most relevant chunk.
+- google-genai package: new replacement for deprecated google-generativeai.
+  Client initialized with api_key and http_options for API version control.
+- gemini-embedding-001: correct embedding model name for our API account.
+  Always verify available models via client.models.list() instead of guessing.
+- chromadb.HttpClient: connects to separate ChromaDB container over HTTP,
+  vs chromadb.Client() which is in-memory and loses data on restart
+- get_or_create_collection: idempotent — safe to call every time, creates
+  collection on first call, fetches on subsequent calls. Same as mkdir -p.
+- collection.add(): stores documents, embeddings, ids, and metadata together.
+  IDs are unique per chunk (document_id_chunk_0, document_id_chunk_1 etc.)
+  Metadata stores document_id and chunk_index for filtering later.
+- Docker hot reload: volume mount means code changes reflect instantly
+  in container without rebuild — only rebuild needed when requirements change.
+
+**Bugs faced + how fixed:**
+- google.generativeai deprecated → switched to google.genai package
+- text-embedding-004 model not found → ran client.models.list() inside
+  container to find correct model name: gemini-embedding-001
+- api_version v1beta doesn't support embedding model → forced v1 via
+  http_options={"api_version": "v1"}
+- chroma_client NameError → variable name conflict between client instances,
+  renamed to gemini_client and chroma_client explicitly
+
+**Interview questions I can now answer:**
+- What is an embedding and how does semantic similarity search work?
+- Why use chromadb.HttpClient instead of chromadb.Client()?
+- What does collection.add() store and why do we need metadata?
+- Why rename google-generativeai to google-genai?
+
+**What to pick up next session (Day 9):**
+- Query endpoint — embed the user's question, similarity search ChromaDB,
+  return top 5 most relevant chunks as JSON

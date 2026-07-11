@@ -99,3 +99,49 @@ async def process_pdf(file: UploadFile = File(...)):
         "total_chunks": stored_chunks,
         "preview": chunks[0][:200] if chunks else ""
     }
+
+@app.post("/query")
+async def query(request: dict):
+    question = request.get("question")
+    document_id = request.get("document_id")
+    
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required")
+    
+    result = gemini_client.models.embed_content(
+        model="models/gemini-embedding-001",
+        contents=question,
+    )
+    question_embedding = result.embeddings[0].values
+    
+    collection = chroma_client.get_or_create_collection(name="documents")
+    
+    where_filter = {"document_id": document_id} if document_id else None
+    
+    results = collection.query(
+        query_embeddings=[question_embedding],
+        n_results=5,
+        where=where_filter,
+    )
+    
+    chunks = results["documents"][0]
+    metadatas = results["metadatas"][0]
+    distances = results["distances"][0]
+    
+    print(f"\n--- Query Results ---")
+    print(f"Question: {question}")
+    print(f"Top {len(chunks)} chunks found")
+    print(f"Distances: {distances}")
+    print(f"--------------------\n")
+    
+    return {
+        "question": question,
+        "chunks": [
+            {
+                "text": chunk,
+                "metadata": metadata,
+                "distance": distance
+            }
+            for chunk, metadata, distance in zip(chunks, metadatas, distances)
+        ]
+    }
