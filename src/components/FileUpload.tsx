@@ -2,8 +2,14 @@
 
 import { useState, useRef } from "react";
 
+interface UploadResult {
+  filename: string;
+  document_id: string;
+  total_chunks: number;
+}
+
 interface FileUploadProps {
-  onUploadComplete: (filename: string) => void;
+  onUploadComplete: (data: UploadResult) => void;
 }
 
 export default function FileUpload({ onUploadComplete }: FileUploadProps) {
@@ -37,8 +43,11 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
         return;
       }
 
-      onUploadComplete(data.filename);
-    } catch (err) {
+      onUploadComplete({
+        filename: data.filename,
+        document_id: data.document_id,
+        total_chunks: data.total_chunks,
+      });    } catch (err) {
       setError("Upload failed. Please try again.");
     } finally {
       setIsUploading(false);

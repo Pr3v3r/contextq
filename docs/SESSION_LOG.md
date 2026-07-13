@@ -259,3 +259,32 @@ A running learning diary for building ContextQ, June 23 – July 21, 2026.
 **What to pick up next session (Day 9):**
 - Query endpoint — embed the user's question, similarity search ChromaDB,
   return top 5 most relevant chunks as JSON
+
+  ## Day 9 — July 11, 2026
+**Task completed:** Query endpoint — semantic similarity search
+
+**Concepts learned:**
+- Query flow: embed question → similarity search ChromaDB → return top N chunks
+  This is the retrieval half of RAG — generation comes next session
+- collection.query(): takes query_embeddings, n_results, and optional where
+  filter. Returns documents, metadatas, and distances sorted by relevance
+- Distance in vector search: how far apart two vectors are numerically.
+  Small distance = semantically similar. Results sorted ascending by distance
+  so first result is always most relevant
+- where_filter: lets us scope search to a specific document_id so a user
+  only gets chunks from their own document, not everyone's
+- Testing in isolation: built and verified retrieval before adding generation
+  layer — each piece tested independently before combining
+
+**Bugs faced + how fixed:**
+- None today
+
+**Interview questions I can now answer:**
+- What does similarity search actually do under the hood?
+- What is distance in the context of vector search?
+- Why filter by document_id in the query?
+- Why test retrieval separately before adding the LLM generation step?
+
+**What to pick up next session (Day 10):**
+- Connect Next.js to FastAPI — upload triggers full pipeline end to end,
+  confirm chunks stored in ChromaDB from the UI

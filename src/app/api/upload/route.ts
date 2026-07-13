@@ -32,9 +32,26 @@ export async function POST(req: NextRequest) {
 
   await writeFile(filepath, buffer);
 
+  const fastApiForm = new FormData();
+  fastApiForm.append("file", new Blob([buffer], { type: "application/pdf" }), filename);
+
+  const fastApiRes = await fetch("http://localhost:8000/process-pdf", {
+    method: "POST",
+    body: fastApiForm,
+  });
+
+  if (!fastApiRes.ok) {
+    const error = await fastApiRes.json();
+    return NextResponse.json({ error: error.detail }, { status: 500 });
+  }
+
+  const fastApiData = await fastApiRes.json();
+
   return NextResponse.json({ 
     success: true, 
     filename,
-    path: `/uploads/${filename}`
+    path: `/uploads/${filename}`,
+    document_id: fastApiData.document_id,
+    total_chunks: fastApiData.total_chunks,
   });
 }
