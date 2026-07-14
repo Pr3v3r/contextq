@@ -29,7 +29,7 @@ export default function Sidebar() {
       )}
 
       <aside
-        className={`fixed md:static top-0 left-0 h-screen w-64 bg-surface text-foreground border-r border-border p-6 flex flex-col gap-6 z-50 transition-transform duration-200 ${
+        className={`fixed md:static top-0 left-0 min-h-full w-64 bg-surface self-stretch text-foreground border-r border-border p-6 flex flex-col gap-6 z-50 transition-transform duration-200 ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >

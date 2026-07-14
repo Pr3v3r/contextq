@@ -318,3 +318,33 @@ A running learning diary for building ContextQ, June 23 – July 21, 2026.
 **What to pick up next session (Day 11):**
 - Q&A endpoint in FastAPI — take top chunks from ChromaDB, construct
   prompt, call Gemini, return answer (non-streaming first)
+
+  ## Day 11 & 12 — July 13-14, 2026
+**Task completed:** Q&A endpoint + streaming via Server-Sent Events
+
+**Concepts learned:**
+- Server-Sent Events (SSE): server keeps HTTP connection open and sends
+  chunks of data as they're ready. Client receives each chunk immediately
+  instead of waiting for the full response.
+- StreamingResponse in FastAPI: wraps an async generator function,
+  sets media_type="text/event-stream", keeps connection alive
+- yield vs return: yield turns a function into a generator — pauses execution,
+  sends one value, resumes when next value is needed. return sends everything
+  at once and closes the function.
+- async generator: combines async (non-blocking) with yield (streaming).
+  FastAPI can handle other requests while waiting for Gemini's next chunk.
+- ReadableStream + getReader(): browser API to consume a streaming response
+  chunk by chunk. Each .read() call returns the next available bytes.
+- TextDecoder: converts raw bytes (Uint8Array) from network into a JS string
+- SSE format: each event is "data: {json}\n\n". We parse each line,
+  skip non-data lines, parse JSON, extract text, append to UI
+- [DONE] sentinel: custom signal we send to tell the client the stream is over
+- Chat state in React: messages array grows as user sends and AI responds.
+  Last message content is updated incrementally as stream chunks arrive.
+  Chat resets on page refresh — persistence comes Day 14.
+
+**Bugs faced + how fixed:**
+- Gemini rate limit (429) on generate_content — daily free tier quota exhausted.
+  Code is correct, just need to wait for quota reset overnight.
+- gemini_clients typo → gemini_client (no s)
+- generate(). period instead of comma → generate(),

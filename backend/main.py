@@ -7,6 +7,8 @@ import chromadb
 import io
 import os
 from dotenv import load_dotenv
+from fastapi.responses import StreamingResponse
+import json
 
 load_dotenv()
 
@@ -205,3 +207,60 @@ Answer the question based only on the provided excerpts. If the answer cannot be
         "chunks_used": len(chunks),
         "sources": [{"text": chunk[:200], "chunk_index": i} for i, chunk in enumerate(chunks)]
     }
+
+@app.post("/ask-stream")
+async def ask_stream(request: dict):
+    question = request.get("question")
+    document_id = request.get("document_id")
+
+    if not question or not document_id:
+        raise HTTPException(status_code=400, detail="question and document_id are required")
+
+    result = gemini_client.models.embed_content(
+        model = "models/gemini-embedding-001",
+        contents = question,
+    )
+    question_embedding = result.embeddings[0].values
+
+    collection = chroma_client.get_or_create_collection(name="documents")
+    results = collection.query(
+        query_embeddings=[question_embedding],
+        n_results=5,
+        where={"document_id": document_id},
+    )
+
+    chunks = results["documents"][0]
+
+    if not chunks:
+        raise HTTPException(status_code=404, detail="No relevant content found")
+
+    context = "\n\n".join([f"Excerpt {i+1}:\n{chunk}" for i, chunk in enumerate(chunks)])
+
+    prompt = f"""You are a helpful assistant that answers questions based on the provided document excerpts.
+
+Document excerpts:
+{context}
+
+Question: {question}
+
+Answer the question based on the provided excerpts. If the answer cannot be found in the excerpts, say so clearly."""
+
+    async def generate():
+        response = gemini_client.models.generate_content_stream(
+            model = "gemini-2.0-flash-lite",
+            contents=prompt,
+        )
+        for chunk in response:
+            if chunk.text:
+                data = json.dumps({"text": chunk.text})
+                yield f"data: {data}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
