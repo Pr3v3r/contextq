@@ -288,3 +288,33 @@ A running learning diary for building ContextQ, June 23 – July 21, 2026.
 **What to pick up next session (Day 10):**
 - Connect Next.js to FastAPI — upload triggers full pipeline end to end,
   confirm chunks stored in ChromaDB from the UI
+
+  ## Day 10 — July 13, 2026
+**Task completed:** Next.js connected to FastAPI, full upload pipeline end to end
+
+**Concepts learned:**
+- Next.js API route as proxy: upload route saves file to disk AND forwards
+  it to FastAPI in the same request, returns combined response to frontend
+- FormData reconstruction: can't forward the original request FormData —
+  must reconstruct using new Blob([buffer]) after reading the file into memory
+- TypeScript interface updates: when a callback's return type changes,
+  must update the interface in every component that uses it
+- Duplicate interface error: TypeScript doesn't allow two interfaces with
+  the same name in the same file — delete the old one when updating
+- Full RAG ingestion pipeline: browser → Next.js API → FastAPI →
+  pypdf (extract) → LangChain (chunk) → Gemini (embed) → ChromaDB (store)
+
+**Bugs faced + how fixed:**
+- Infinite GET /dashboard requests → cleared .next cache with rm -rf .next
+- Two FileUploadProps interfaces causing type error → deleted the old one
+- onUploadComplete passing string instead of object → updated callback
+  to pass full UploadResult object with filename, document_id, total_chunks
+
+**Interview questions I can now answer:**
+- How does Next.js act as a proxy between the frontend and FastAPI?
+- Why can't you forward FormData directly from one HTTP request to another?
+- What is the complete data ingestion flow in a RAG system?
+
+**What to pick up next session (Day 11):**
+- Q&A endpoint in FastAPI — take top chunks from ChromaDB, construct
+  prompt, call Gemini, return answer (non-streaming first)

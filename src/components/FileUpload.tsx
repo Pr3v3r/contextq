@@ -1,5 +1,6 @@
 "use client";
 
+import { propagateServerField } from "next/dist/server/lib/router-utils/setup-dev-bundler";
 import { useState, useRef } from "react";
 
 interface UploadResult {
@@ -42,12 +43,13 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
         setError(data.error);
         return;
       }
-
+      
       onUploadComplete({
         filename: data.filename,
         document_id: data.document_id,
         total_chunks: data.total_chunks,
-      });    } catch (err) {
+      });
+    } catch (err) {
       setError("Upload failed. Please try again.");
     } finally {
       setIsUploading(false);
@@ -72,14 +74,15 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
   return (
     <div
+      id="upload-zone"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onClick={() => inputRef.current?.click()}
       className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
         isDragging
-          ? "border-blue-500 bg-blue-50"
-          : "border-zinc-300 hover:border-zinc-400"
+          ? "border-primary bg-surface"
+          : "border-border hover:border-primary"
       }`}
     >
       <input
@@ -93,13 +96,13 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
         }}
       />
       {isUploading ? (
-        <p className="text-zinc-500">Uploading...</p>
+        <p className="text-muted">Uploading...</p>
       ) : (
         <>
-          <p className="text-zinc-600 font-medium">
+          <p className="text-foreground font-medium">
             Drag and drop your PDF here
           </p>
-          <p className="text-zinc-400 text-sm mt-1">or click to browse</p>
+          <p className="text-muted text-sm mt-1">or click to browse</p>
         </>
       )}
       {error && <p className="text-red-500 text-sm mt-3">{error}</p>}

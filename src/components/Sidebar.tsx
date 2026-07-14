@@ -5,9 +5,15 @@ import { useState } from "react";
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleUploadClick = () => {
+    setIsOpen(false);
+    const uploadZone = document.getElementById("upload-zone");
+    uploadZone?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => uploadZone?.click(), 300);
+  };
+
   return (
     <>
-      {/* Mobile hamburger button */}
       <button
         onClick={() => setIsOpen(true)}
         className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface text-foreground"
@@ -15,7 +21,6 @@ export default function Sidebar() {
         ☰
       </button>
 
-      {/* Overlay for mobile when sidebar is open */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
@@ -23,7 +28,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Sidebar itself */}
       <aside
         className={`fixed md:static top-0 left-0 h-screen w-64 bg-surface text-foreground border-r border-border p-6 flex flex-col gap-6 z-50 transition-transform duration-200 ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -39,7 +43,10 @@ export default function Sidebar() {
           </button>
         </div>
 
-        <button className="bg-primary text-primary-foreground rounded-lg py-2 px-4 font-medium hover:opacity-90 transition-colors">
+        <button
+          onClick={handleUploadClick}
+          className="bg-primary text-primary-foreground rounded-lg py-2 px-4 font-medium hover:opacity-90 transition-colors"
+        >
           + Upload Document
         </button>
 

@@ -145,3 +145,63 @@ async def query(request: dict):
             for chunk, metadata, distance in zip(chunks, metadatas, distances)
         ]
     }
+
+@app.post("/ask")
+async def ask(request: dict):
+    question = request.get("question")
+    document_id = request.get("document_id")
+    
+    if not question or not document_id:
+        raise HTTPException(status_code=400, detail="question and document_id are required")
+    
+    # Embed the question
+    result = gemini_client.models.embed_content(
+        model="models/gemini-embedding-001",
+        contents=question,
+    )
+    question_embedding = result.embeddings[0].values
+    
+    # Retrieve relevant chunks
+    collection = chroma_client.get_or_create_collection(name="documents")
+    results = collection.query(
+        query_embeddings=[question_embedding],
+        n_results=5,
+        where={"document_id": document_id},
+    )
+    
+    chunks = results["documents"][0]
+    
+    if not chunks:
+        raise HTTPException(status_code=404, detail="No relevant content found for this document")
+    
+    # Construct prompt
+    context = "\n\n".join([f"Excerpt {i+1}:\n{chunk}" for i, chunk in enumerate(chunks)])
+    
+    prompt = f"""You are a helpful assistant that answers questions based on the provided document excerpts.
+    
+Document excerpts:
+{context}
+
+Question: {question}
+
+Answer the question based only on the provided excerpts. If the answer cannot be found in the excerpts, say so clearly."""
+    
+    # Call Gemini
+    response = gemini_client.models.generate_content(
+        model="gemini-2.0-flash-lite",
+        contents=prompt,
+    )
+    
+    answer = response.text
+    
+    print(f"\n--- Q&A Complete ---")
+    print(f"Question: {question}")
+    print(f"Answer preview: {answer[:200]}")
+    print(f"--------------------\n")
+    
+    return {
+        "question": question,
+        "answer": answer,
+        "chunks_used": len(chunks),
+        "sources": [{"text": chunk[:200], "chunk_index": i} for i, chunk in enumerate(chunks)]
+    }
