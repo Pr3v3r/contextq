@@ -13,8 +13,7 @@ import json
 load_dotenv()
 
 gemini_client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY"),
-    http_options={"api_version": "v1"}
+    api_key=os.getenv("GEMINI_API_KEY")
 )
 
 chroma_client = chromadb.HttpClient(
@@ -190,7 +189,7 @@ Answer the question based only on the provided excerpts. If the answer cannot be
     
     # Call Gemini
     response = gemini_client.models.generate_content(
-        model="gemini-2.0-flash-lite",
+        model="gemini-flash-latest",
         contents=prompt,
     )
     
@@ -246,11 +245,10 @@ Question: {question}
 Answer the question based on the provided excerpts. If the answer cannot be found in the excerpts, say so clearly."""
 
     async def generate():
-        response = gemini_client.models.generate_content_stream(
-            model = "gemini-2.0-flash-lite",
+        async for chunk in await gemini_client.aio.models.generate_content_stream(
+            model="gemini-flash-latest",
             contents=prompt,
-        )
-        for chunk in response:
+        ):
             if chunk.text:
                 data = json.dumps({"text": chunk.text})
                 yield f"data: {data}\n\n"
