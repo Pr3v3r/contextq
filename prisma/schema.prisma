@@ -14,6 +14,7 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  documents     Document[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -42,4 +43,27 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id          String    @id @default(cuid())
+  userId      String
+  documentId  String
+  filename    String
+  totalChunks Int
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@unique([userId, documentId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  documentId String
+  userId     String
+  role       String
+  content    String
+  createdAt  DateTime @default(now())
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }

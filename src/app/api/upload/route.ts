@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { writeFile, mkdir } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
+import { prisma } from "@/lib/prisma";
+
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -46,6 +48,21 @@ export async function POST(req: NextRequest) {
   }
 
   const fastApiData = await fastApiRes.json();
+  await (prisma as any).document.upsert({
+        where: {
+      userId_documentId: {
+        userId: session.user!.id!,
+        documentId: fastApiData.document_id,
+      }
+    },
+    update: {},
+    create: {
+      userId: session.user!.id!,
+      documentId: fastApiData.document_id,
+      filename: file.name,
+      totalChunks: fastApiData.total_chunks,
+    }
+  });
 
   return NextResponse.json({ 
     success: true, 
@@ -54,4 +71,5 @@ export async function POST(req: NextRequest) {
     document_id: fastApiData.document_id,
     total_chunks: fastApiData.total_chunks,
   });
+  
 }
