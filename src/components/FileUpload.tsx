@@ -73,18 +73,19 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
   };
 
   return (
-    <div
-      id="upload-zone"
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onClick={() => inputRef.current?.click()}
-      className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-        isDragging
-          ? "border-primary bg-surface"
-          : "border-border hover:border-primary"
-      }`}
-    >
+<div
+  id="upload-zone"
+  onDrop={handleDrop}
+  onDragOver={handleDragOver}
+  onDragLeave={handleDragLeave}
+  onClick={() => inputRef.current?.click()}
+  className={`group relative flex flex-col items-center justify-center w-full h-56 rounded-2xl cursor-pointer transition-all duration-300 ${
+    isDragging
+      ? "border-2 border-primary bg-primary/5 scale-[1.02]"
+      : "border border-border/40 hover:border-primary/60 hover:bg-white/5 bg-white/[0.02]"
+  }`}
+  style={{ boxShadow: isDragging ? "0 0 30px rgba(242, 194, 214, 0.15)" : undefined }}
+>
       <input
         ref={inputRef}
         type="file"
@@ -95,16 +96,18 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
           if (file) handleFile(file);
         }}
       />
-      {isUploading ? (
-        <p className="text-muted">Uploading...</p>
-      ) : (
-        <>
-          <p className="text-foreground font-medium">
-            Drag and drop your PDF here
-          </p>
-          <p className="text-muted text-sm mt-1">or click to browse</p>
-        </>
-      )}
+{isUploading ? (
+  <div className="flex flex-col items-center gap-3">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    <p className="text-muted text-sm">Processing your document...</p>
+  </div>
+) : (
+  <div className="flex flex-col items-center gap-2">
+    <div className="text-4xl mb-2 group-hover:scale-110 transition-transform duration-200">📄</div>
+    <p className="text-foreground font-medium">Drop your PDF here</p>
+    <p className="text-muted text-sm">or click to browse</p>
+  </div>
+)}
       {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
     </div>
   );

@@ -119,11 +119,8 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
   };
 
   return (
-    <div className="flex flex-col h-[600px] border border-border rounded-xl overflow-hidden">
-      <div className="p-4 border-b border-border bg-surface">
-        <p className="font-medium text-foreground">{documentName}</p>
-        <p className="text-sm text-muted">Ask anything about this document</p>
-      </div>
+    <div className="flex flex-col h-full border border-border rounded-xl overflow-hidden">
+     
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
         {isLoading ? (
@@ -138,13 +135,13 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
               key={i}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              <div
-                className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-surface border border-border text-foreground"
-                }`}
-              >
+            <div
+  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+    msg.role === "user"
+      ? "bg-primary text-primary-foreground rounded-tr-sm"
+      : "bg-surface-elevated border border-border text-foreground rounded-tl-sm"
+  }`}
+>
                 {msg.content || (isStreaming ? "▊" : "")}
               </div>
             </div>
@@ -160,13 +157,11 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           placeholder="Ask a question..."
-          className="flex-1 bg-surface border border-border rounded-lg px-4 py-2 text-foreground placeholder:text-muted focus:outline-none focus:border-primary"
-        />
+          className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors text-sm"        />
         <button
           onClick={sendMessage}
           disabled={isStreaming || !input.trim()}
-          className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
-        >
+          className="bg-primary text-primary-foreground px-5 py-3 rounded-xl font-medium hover:opacity-90 disabled:opacity-40 transition-all text-sm"        >
           {isStreaming ? "..." : "Send"}
         </button>
       </div>

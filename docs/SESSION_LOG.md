@@ -386,3 +386,35 @@ A running learning diary for building ContextQ, June 23 – July 21, 2026.
 **What to pick up next session (Day 15):**
 - Document vaults — fetch real documents from Postgres, show in sidebar
   and document list, clicking a document loads its chat history
+
+  ## Day 15 — July 18, 2026
+**Task completed:** Document vaults — real documents from Postgres
+
+**Concepts learned:**
+- SessionProvider: required wrapper for useSession hook in Client Components.
+  Goes in layout.tsx so it wraps the entire app.
+- useSession vs auth(): useSession is for Client Components (needs
+  SessionProvider), auth() is for Server Components (direct call, no wrapper)
+- Conditional rendering: ChatInterface only renders when a document is
+  selected — no selected doc = no context = no point showing chat
+- Lifting state up: selectedDoc state lives in DashboardPage (parent) so
+  both DocumentList and ChatInterface can share it. DocumentList updates it,
+  ChatInterface reads it.
+- orderBy createdAt desc: most recently uploaded document appears first,
+  standard UX pattern for document lists
+- Real data replacing mock data: DocumentList now fetches from /api/documents
+  instead of hardcoded array. Empty state still works for new users.
+
+**Bugs faced + how fixed:**
+- useSession must be wrapped in SessionProvider → added SessionProvider to
+  layout.tsx wrapping all children
+
+**Interview questions I can now answer:**
+- What is the difference between useSession and auth() in Next.js?
+- Why does useSession need a SessionProvider?
+- What does "lifting state up" mean and when do you use it?
+- Why render ChatInterface conditionally based on selected document?
+
+**What to pick up next session (Day 16):**
+- Error handling everywhere — failed uploads, API timeouts, empty states,
+  loading skeletons on every async action

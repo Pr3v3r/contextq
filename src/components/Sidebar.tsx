@@ -1,22 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
-export default function Sidebar() {
+interface Document {
+  id: string;
+  documentId: string;
+  filename: string;
+  totalChunks: number;
+  createdAt: string;
+}
+
+interface SidebarProps {
+  onSelectDocument: (documentId: string, filename: string) => void;
+  selectedDocumentId: string | null;
+  onUploadClick: () => void;
+}
+
+export default function Sidebar({ onSelectDocument, selectedDocumentId, onUploadClick }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [documents, setDocuments] = useState<Document[]>([]);
 
-  const handleUploadClick = () => {
-    setIsOpen(false);
-    const uploadZone = document.getElementById("upload-zone");
-    uploadZone?.scrollIntoView({ behavior: "smooth" });
-    setTimeout(() => uploadZone?.click(), 300);
-  };
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const res = await fetch("/api/documents");
+        const data = await res.json();
+        if (data.documents) setDocuments(data.documents);
+      } catch (err) {
+        console.error("Failed to fetch documents", err);
+      }
+    };
+    fetchDocuments();
+  }, []);
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface text-foreground"
+        className="md:hidden cursor-pointer fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface text-foreground"
       >
         ☰
       </button>
@@ -29,30 +51,56 @@ export default function Sidebar() {
       )}
 
       <aside
-        className={`fixed md:static top-0 left-0 min-h-full w-64 bg-surface self-stretch text-foreground border-r border-border p-6 flex flex-col gap-6 z-50 transition-transform duration-200 ${
+        className={`fixed md:static top-0 left-0 h-screen w-64 bg-surface text-foreground border-r border-border p-4 flex flex-col z-50 transition-transform duration-200 ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">ContextQ</h1>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="md:hidden text-muted"
-          >
-            ✕
-          </button>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+  <h1 className="text-lg font-bold tracking-tight">ContextQ</h1>
+  <div className="flex items-center gap-2">
+    <ThemeToggle />
+    <button onClick={() => setIsOpen(false)} className="md:hidden text-muted">✕</button>
+  </div>
+</div>
+
+        {/* Document list */}
+        <div className="flex-1 overflow-y-auto flex flex-col gap-1">
+          <p className="text-xs text-muted uppercase tracking-widest mb-2">Documents</p>
+          {documents.length === 0 ? (
+            <p className="text-muted text-sm">No documents yet</p>
+          ) : (
+            documents.map((doc) => (
+              <button
+                key={doc.id}
+                onClick={() => {
+                  onSelectDocument(doc.documentId, doc.filename);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2 cursor-pointer rounded-lg text-sm transition-colors truncate ${
+                  selectedDocumentId === doc.documentId
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-surface-elevated"
+                }`}
+              >
+                📄 {doc.filename}
+              </button>
+            ))
+          )}
         </div>
 
-        <button
-          onClick={handleUploadClick}
-          className="bg-primary text-primary-foreground rounded-lg py-2 px-4 font-medium hover:opacity-90 transition-colors"
-        >
-          + Upload Document
-        </button>
-
-        <nav className="flex flex-col gap-2 text-muted">
-          <span className="text-foreground font-medium">My Documents</span>
-        </nav>
+        {/* Upload button pinned at bottom */}
+        <div className="mt-4 pt-4 border-t border-border">
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              onUploadClick();
+            }}
+            className="w-full bg-primary cursor-pointer text-primary-foreground rounded-lg py-2 px-4 font-medium hover:opacity-90 transition-opacity text-sm"
+          >
+            + Upload Document
+          </button>
+        </div>
       </aside>
     </>
   );
