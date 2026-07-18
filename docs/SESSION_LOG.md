@@ -348,3 +348,41 @@ A running learning diary for building ContextQ, June 23 – July 21, 2026.
   Code is correct, just need to wait for quota reset overnight.
 - gemini_clients typo → gemini_client (no s)
 - generate(). period instead of comma → generate(),
+
+## Day 13 & 14 — July 15-17, 2026
+**Task completed:** Streaming verified, conversation history with Postgres
+
+**Concepts learned:**
+- generate_content_stream with async for: proper async streaming from Gemini,
+  chunks arrive in batches on free tier but architecture is correct
+- gemini-flash-latest: the model string that actually works on this account
+- useEffect with dependency array: runs on mount and whenever dependency
+  changes — used to reload chat history when document switches
+- upsert vs create: upsert is idempotent — safe to call even if record exists,
+  prevents unique constraint errors on re-upload
+- JWT session user ID: not included by default, must add via callbacks in
+  auth.ts — jwt callback stores it in token, session callback exposes it
+- TypeScript module augmentation: declare module "next-auth" to extend
+  Session type with custom fields like user.id
+- Message persistence flow: save user message before streaming, accumulate
+  full answer in fullAnswer variable, save assistant message after stream ends
+- Document ID mismatch: FastAPI prefixes filename with Date.now() creating
+  the document_id, must use this exact string everywhere consistently
+
+**Bugs faced + how fixed:**
+- session.user.id undefined → added jwt and session callbacks to auth.ts
+- Multiple user records from sign-out/sign-in → cleaned database, re-uploaded
+- Document not found 404 → document_id in dashboard was missing timestamp
+  prefix, updated to match what FastAPI actually generates
+- Messages saving but not loading → GET was finding wrong document record
+  due to mismatched documentId strings
+
+**Interview questions I can now answer:**
+- How do you persist chat history in a RAG application?
+- Why use upsert instead of create for document records?
+- How do you add custom fields to NextAuth JWT sessions?
+- What is TypeScript module augmentation and when do you use it?
+
+**What to pick up next session (Day 15):**
+- Document vaults — fetch real documents from Postgres, show in sidebar
+  and document list, clicking a document loads its chat history

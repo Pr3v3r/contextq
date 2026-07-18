@@ -1,17 +1,29 @@
-import { auth } from "@/auth";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import DocumentList from "@/components/DocumentList";
 import UploadSection from "@/components/UploadSection";
 import ChatInterface from "@/components/ChatInterface";
-import { signOut } from "@/auth";
+import { signOut } from "next-auth/react";
 
-export default async function DashboardPage() {
-  const session = await auth();
+interface SelectedDocument {
+  documentId: string;
+  filename: string;
+}
 
-  if (!session) {
-    redirect("/login");
-  }
+export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const [selectedDoc, setSelectedDoc] = useState<SelectedDocument | null>(null);
+
+  if (status === "loading") return null;
+  if (!session) redirect("/login");
+
+  const handleSignOut = async () => {
+    await signOut({ redirectTo: "/login" });
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -21,21 +33,26 @@ export default async function DashboardPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
             <p className="text-muted">{session.user?.email}</p>
-<form action={async () => {
-  "use server";
-  await signOut({ redirectTo: "/login" });
-}}>
-  <button type="submit" className="text-sm text-muted hover:text-foreground">
-    Sign out
-  </button>
-</form>
+            <button
+              onClick={handleSignOut}
+              className="text-sm text-muted hover:text-foreground"
+            >
+              Sign out
+            </button>
           </div>
           <UploadSection />
-          <ChatInterface
-  documentId="1784266478737-10_PE_124145786"
-  documentName="EV Charging Challenges"
-/>
-          <DocumentList />
+          {selectedDoc && (
+            <ChatInterface
+              documentId={selectedDoc.documentId}
+              documentName={selectedDoc.filename}
+            />
+          )}
+          <DocumentList
+            onSelectDocument={(documentId, filename) =>
+              setSelectedDoc({ documentId, filename })
+            }
+            selectedDocumentId={selectedDoc?.documentId ?? null}
+          />
         </div>
       </main>
     </div>

@@ -1,30 +1,68 @@
 "use client";
 
-const mockDocuments = [
-  { id: "1", name: "Operating Systems - Unit 3.pdf", uploadedAt: "2 days ago" },
-  { id: "2", name: "DAA Lecture Notes.pdf", uploadedAt: "5 days ago" },
-  { id: "3", name: "Probability MAT2201.pdf", uploadedAt: "1 week ago" },
-];
+import { useState, useEffect } from "react";
 
-export default function DocumentList() {
+interface Document {
+  id: string;
+  documentId: string;
+  filename: string;
+  totalChunks: number;
+  createdAt: string;
+}
+
+interface DocumentListProps {
+  onSelectDocument: (documentId: string, filename: string) => void;
+  selectedDocumentId: string | null;
+}
+
+export default function DocumentList({ onSelectDocument, selectedDocumentId }: DocumentListProps) {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const res = await fetch("/api/documents");
+        const data = await res.json();
+        if (data.documents) {
+          setDocuments(data.documents);
+        }
+      } catch (err) {
+        console.error("Failed to fetch documents", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDocuments();
+  }, []);
+
+  if (isLoading) {
+    return <p className="text-muted text-sm">Loading documents...</p>;
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold text-foreground">Your Documents</h2>
 
-      {mockDocuments.length === 0 ? (
+      {documents.length === 0 ? (
         <p className="text-muted text-sm">No documents uploaded yet.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {mockDocuments.map((doc) => (
+          {documents.map((doc) => (
             <div
               key={doc.id}
-              className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-surface cursor-pointer transition-colors"
+              onClick={() => onSelectDocument(doc.documentId, doc.filename)}
+              className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors ${
+                selectedDocumentId === doc.documentId
+                  ? "border-primary bg-surface"
+                  : "border-border hover:border-primary hover:bg-surface"
+              }`}
             >
               <div className="flex items-center gap-3">
                 <span className="text-muted">📄</span>
-                <span className="font-medium text-foreground">{doc.name}</span>
+                <span className="font-medium text-foreground">{doc.filename}</span>
               </div>
-              <span className="text-sm text-muted">{doc.uploadedAt}</span>
+              <span className="text-sm text-muted">{doc.totalChunks} chunks</span>
             </div>
           ))}
         </div>
