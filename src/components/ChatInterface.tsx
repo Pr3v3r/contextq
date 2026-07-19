@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { showToast, dismissToast } from "@/components/ToastContainer";
 
 interface Message {
   role: "user" | "assistant";
@@ -31,7 +32,7 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
           })));
         }
       } catch (err) {
-        console.error("Failed to load history", err);
+        showToast("Failed to load chat history", "error");
       } finally {
         setIsLoading(false);
       }
@@ -60,10 +61,13 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
     setInput("");
     setIsStreaming(true);
 
+    const toastId = showToast("Thinking...", "loading");
+
     const assistantMessage: Message = { role: "assistant", content: "" };
     setMessages((prev) => [...prev, assistantMessage]);
 
     let fullAnswer = "";
+    let firstChunk = true;
 
     try {
       const res = await fetch("http://localhost:8000/ask-stream", {
@@ -71,6 +75,17 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: input, document_id: documentId }),
       });
+
+      if (!res.ok) {
+        dismissToast(toastId);
+        showToast("Failed to get a response. Please try again.", "error");
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." };
+          return updated;
+        });
+        return;
+      }
 
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -88,13 +103,14 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
             if (data === "[DONE]") break;
             try {
               const parsed = JSON.parse(data);
+              if (firstChunk) {
+                dismissToast(toastId);
+                firstChunk = false;
+              }
               fullAnswer += parsed.text;
               setMessages((prev) => {
                 const updated = [...prev];
-                updated[updated.length - 1] = {
-                  role: "assistant",
-                  content: fullAnswer,
-                };
+                updated[updated.length - 1] = { role: "assistant", content: fullAnswer };
                 return updated;
               });
               bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,12 +121,11 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
 
       await saveMessage("assistant", fullAnswer);
     } catch (err) {
+      dismissToast(toastId);
+      showToast("Connection error. Is the backend running?", "error");
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = {
-          role: "assistant",
-          content: "Something went wrong. Please try again.",
-        };
+        updated[updated.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." };
         return updated;
       });
     } finally {
@@ -119,29 +134,28 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
   };
 
   return (
-    <div className="flex flex-col h-full border border-border rounded-xl overflow-hidden">
-     
-
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
         {isLoading ? (
-          <p className="text-muted text-sm text-center mt-8">Loading history...</p>
+          <div className="flex flex-col gap-3 mt-4">
+            {[1,2,3].map(i => (
+              <div key={i} className={`h-12 rounded-2xl bg-surface animate-pulse ${i % 2 === 0 ? "w-3/4" : "w-2/3 self-end"}`} />
+            ))}
+          </div>
         ) : messages.length === 0 ? (
-          <p className="text-muted text-sm text-center mt-8">
-            No messages yet. Ask a question about your document.
-          </p>
+          <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center mt-16">
+            <p className="text-2xl">💬</p>
+            <p className="text-foreground font-medium">Ask anything about this document</p>
+            <p className="text-muted text-sm">Your questions and answers will be saved automatically</p>
+          </div>
         ) : (
           messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-            <div
-  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-    msg.role === "user"
-      ? "bg-primary text-primary-foreground rounded-tr-sm"
-      : "bg-surface-elevated border border-border text-foreground rounded-tl-sm"
-  }`}
->
+            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                msg.role === "user"
+                  ? "bg-primary text-primary-foreground rounded-tr-sm"
+                  : "bg-surface-elevated border border-border text-foreground rounded-tl-sm"
+              }`}>
                 {msg.content || (isStreaming ? "▊" : "")}
               </div>
             </div>
@@ -157,11 +171,13 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           placeholder="Ask a question..."
-          className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors text-sm"        />
+          className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors text-sm"
+        />
         <button
           onClick={sendMessage}
           disabled={isStreaming || !input.trim()}
-          className="bg-primary text-primary-foreground px-5 py-3 rounded-xl font-medium hover:opacity-90 disabled:opacity-40 transition-all text-sm"        >
+          className="bg-primary text-primary-foreground px-5 py-3 rounded-xl font-medium hover:opacity-90 disabled:opacity-40 transition-all text-sm cursor-pointer"
+        >
           {isStreaming ? "..." : "Send"}
         </button>
       </div>

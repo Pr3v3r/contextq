@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { showToast } from "@/components/ToastContainer";
 
 interface Document {
   id: string;
@@ -20,6 +21,7 @@ interface SidebarProps {
 export default function Sidebar({ onSelectDocument, selectedDocumentId, onUploadClick }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -28,7 +30,9 @@ export default function Sidebar({ onSelectDocument, selectedDocumentId, onUpload
         const data = await res.json();
         if (data.documents) setDocuments(data.documents);
       } catch (err) {
-        console.error("Failed to fetch documents", err);
+        showToast("Failed to load documents", "error");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchDocuments();
@@ -65,29 +69,32 @@ export default function Sidebar({ onSelectDocument, selectedDocumentId, onUpload
 </div>
 
         {/* Document list */}
-        <div className="flex-1 overflow-y-auto flex flex-col gap-1">
-          <p className="text-xs text-muted uppercase tracking-widest mb-2">Documents</p>
-          {documents.length === 0 ? (
-            <p className="text-muted text-sm">No documents yet</p>
-          ) : (
-            documents.map((doc) => (
-              <button
-                key={doc.id}
-                onClick={() => {
-                  onSelectDocument(doc.documentId, doc.filename);
-                  setIsOpen(false);
-                }}
-                className={`w-full text-left px-3 py-2 cursor-pointer rounded-lg text-sm transition-colors truncate ${
-                  selectedDocumentId === doc.documentId
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-surface-elevated"
-                }`}
-              >
-                📄 {doc.filename}
-              </button>
-            ))
-          )}
-        </div>
+        {isLoading ? (
+  <div className="flex flex-col gap-2">
+    {[1,2,3].map(i => (
+      <div key={i} className="h-9 rounded-lg bg-surface-elevated animate-pulse" />
+    ))}
+  </div>
+) : documents.length === 0 ? (
+  <p className="text-muted text-sm px-3">No documents yet</p>
+) : (
+  documents.map((doc) => (
+    <button
+      key={doc.id}
+      onClick={() => {
+        onSelectDocument(doc.documentId, doc.filename);
+        setIsOpen(false);
+      }}
+      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors truncate cursor-pointer ${
+        selectedDocumentId === doc.documentId
+          ? "bg-primary text-primary-foreground"
+          : "text-foreground hover:bg-surface-elevated"
+      }`}
+    >
+      📄 {doc.filename}
+    </button>
+  ))
+)}
 
         {/* Upload button pinned at bottom */}
         <div className="mt-4 pt-4 border-t border-border">

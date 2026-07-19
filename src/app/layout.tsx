@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
+import ToastContainer from "@/components/ToastContainer";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -31,9 +32,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <SessionProvider>
-          {children}
-        </SessionProvider>
+      <SessionProvider>
+  {children}
+  <ToastContainer />
+</SessionProvider>
       </body>
     </html>
   );

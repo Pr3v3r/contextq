@@ -2,6 +2,7 @@
 
 import { propagateServerField } from "next/dist/server/lib/router-utils/setup-dev-bundler";
 import { useState, useRef } from "react";
+import { showToast, dismissToast } from "@/components/ToastContainer";
 
 interface UploadResult {
   filename: string;
@@ -21,36 +22,41 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
   const handleFile = async (file: File) => {
     if (file.type !== "application/pdf") {
-      setError("Only PDF files are allowed");
+      showToast("Only PDF files are allowed", "error");
       return;
     }
-
+  
     setError(null);
     setIsUploading(true);
-
+    const toastId = showToast("Processing your document...", "loading");
+  
     const formData = new FormData();
     formData.append("file", file);
-
+  
     try {
       const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok) {
-        setError(data.error);
+        dismissToast(toastId);
+        showToast(data.error || "Upload failed", "error");
         return;
       }
-      
+  
+      dismissToast(toastId);
+      showToast(`✓ ${file.name} processed — ${data.total_chunks} chunks ready`, "success");
       onUploadComplete({
         filename: data.filename,
         document_id: data.document_id,
         total_chunks: data.total_chunks,
       });
     } catch (err) {
-      setError("Upload failed. Please try again.");
+      dismissToast(toastId);
+      showToast("Upload failed. Check your connection.", "error");
     } finally {
       setIsUploading(false);
     }
