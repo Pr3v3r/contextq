@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
@@ -11,6 +11,16 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "ContextQ",
   description: "AI-powered document intelligence platform",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ContextQ",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#F2C2D6",
 };
 
 export default function RootLayout({
