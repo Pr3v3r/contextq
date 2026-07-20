@@ -418,3 +418,30 @@ A running learning diary for building ContextQ, June 23 – July 21, 2026.
 **What to pick up next session (Day 16):**
 - Error handling everywhere — failed uploads, API timeouts, empty states,
   loading skeletons on every async action
+
+  ## Day 16 — July 19, 2026
+**Task completed:** Error handling — toast system, loading skeletons, error states
+
+**Concepts learned:**
+- Toast notification system: module-level functions (showToast, dismissToast)
+  that delegate to a mounted React component. Simpler than context — one
+  import, one call from anywhere in the app.
+- Loading/success/error toast types: loading toasts don't auto-dismiss because
+  the operation is still in progress. Replaced by success or error on completion.
+- Loading skeletons: animated placeholder divs (animate-pulse) that show while
+  data is fetching. Better UX than blank space or a spinner.
+- Toast IDs: each showToast returns an ID so you can dismiss a specific toast
+  (e.g. dismiss the "loading" toast when the first stream chunk arrives)
+- firstChunk flag: dismiss the loading toast exactly once when the first
+  streaming chunk arrives, not on every chunk
+
+**Bugs faced + how fixed:**
+- Toast file casing issue (Toast.tsx vs toast.tsx) → cleared .next cache
+
+**Interview questions I can now answer:**
+- How do you build a toast notification system without React context?
+- What is a loading skeleton and why is it better than a spinner?
+- How do you dismiss a specific toast programmatically?
+
+**What to pick up next session (Day 19):**
+- Deploy backend on Railway with Docker Compose
