@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { showToast, dismissToast } from "@/components/ToastContainer";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "assistant";
@@ -151,13 +152,16 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
         ) : (
           messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-tr-sm"
-                  : "bg-surface-elevated border border-border text-foreground rounded-tl-sm"
-              }`}>
-                {msg.content || (isStreaming ? "▊" : "")}
-              </div>
+  <div
+  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+    msg.role === "user"
+      ? "bg-primary text-primary-foreground rounded-tr-sm"
+      : "bg-surface-elevated border border-border text-foreground rounded-tl-sm"
+  }`}
+>
+<ReactMarkdown>
+  {msg.content || (isStreaming ? "▊" : "")}
+</ReactMarkdown></div>
             </div>
           ))
         )}

@@ -1,8 +1,28 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
+
+// --- Custom Animations & Textures ---
+const customStyles = `
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  .bg-grid-pattern {
+    background-size: 32px 32px;
+    background-image: 
+      linear-gradient(to right, rgba(128, 128, 128, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(128, 128, 128, 0.04) 1px, transparent 1px);
+  }
+`;
+
+// --- Hooks & Utility Components ---
 
 function useReveal() {
   const ref = useRef<HTMLDivElement>(null);
@@ -18,17 +38,39 @@ function useReveal() {
   return { ref, visible };
 }
 
-function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   const { ref, visible } = useReveal();
   return (
     <div
       ref={ref}
       style={{ transitionDelay: `${delay}ms` }}
-      className={`transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+      className={`transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"} ${className}`}
     >
       {children}
     </div>
   );
+}
+
+function useScroll() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+  return scrolled;
+}
+
+function useMouseGlow() {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    const updateMousePosition = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", updateMousePosition);
+    return () => window.removeEventListener("mousemove", updateMousePosition);
+  }, []);
+  return mousePosition;
 }
 
 function Logo() {
@@ -40,311 +82,418 @@ function Logo() {
   );
 }
 
-export default function Home() {
+function Accordion({ q, a }: { q: string; a: string }) {
+  const [isOpen, setIsOpen] = useState(false);
   return (
-    <main className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div 
+      className="border border-border/40 rounded-xl bg-background overflow-hidden cursor-pointer hover:border-primary/40 transition-colors shadow-sm"
+      onClick={() => setIsOpen(!isOpen)}
+    >
+      <div className="p-6 font-semibold flex justify-between items-center text-foreground">
+        {q}
+        {/* + to x animation */}
+        <span className={`text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-45" : ""}`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </span>
+      </div>
+      <div className={`px-6 text-muted-foreground text-sm leading-relaxed transition-all duration-300 ${isOpen ? "pb-6 max-h-48 opacity-100" : "max-h-0 opacity-0"}`}>
+        {a}
+      </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  const isScrolled = useScroll();
+  const mousePosition = useMouseGlow();
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  return (
+    <main className="min-h-screen bg-background text-foreground overflow-x-hidden font-sans selection:bg-primary/20 relative">
+      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
+      
+      {/* Background Depth: Grid, Dual Gradients, and Mouse Glow */}
+      <div className="absolute inset-0 bg-grid-pattern pointer-events-none z-0 opacity-40" />
+      <div className="absolute top-0 left-1/4 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 blur-[140px] rounded-full pointer-events-none z-0" />
+      <div className="absolute top-[40%] right-0 translate-x-1/3 w-[500px] h-[500px] bg-blue-500/5 blur-[140px] rounded-full pointer-events-none z-0" />
+      
+      {/* Dynamic Mouse Glow */}
+      <div 
+        className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-300 hidden md:block" 
+        style={{ background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(128,128,128,0.06), transparent 40%)` }} 
+      />
 
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 border-b border-border/40 backdrop-blur-md bg-background/70">
+      <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 backdrop-blur-xl transition-all duration-300 ${
+        isScrolled ? "border-b border-border/50 bg-background/80 shadow-sm" : "border-b border-border/20 bg-background/50"
+      }`}>
         <div className="flex items-center gap-2.5">
           <Logo />
           <span className="font-semibold tracking-tight">ContextQ</span>
         </div>
+        
+        {/* Desktop Links */}
+        <div className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <a href="#comparison" className="px-3 py-1.5 rounded-full hover:bg-primary/10 hover:text-foreground transition-colors">Why ContextQ</a>
+          <a href="#features" className="px-3 py-1.5 rounded-full hover:bg-primary/10 hover:text-foreground transition-colors">Features</a>
+          <a href="#faq" className="px-3 py-1.5 rounded-full hover:bg-primary/10 hover:text-foreground transition-colors">FAQ</a>
+        </div>
+
         <div className="flex items-center gap-4">
           <ThemeToggle />
           <Link
             href="/login"
-            className="bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer"
+            className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-medium hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 transition-all cursor-pointer"
           >
-            Sign in
+            Get Started
           </Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="flex flex-col items-center justify-center min-h-screen text-center px-6 pt-16">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-surface text-muted text-xs mb-8 tracking-wide uppercase">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          Now in beta
-        </div>
-        <h1 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-5xl md:text-7xl font-normal tracking-tight max-w-3xl leading-[1.05] mb-6">
-          Your documents,<br />
-          <em className="text-primary not-italic">finally understood.</em>
-        </h1>
-        <p className="text-muted text-lg max-w-lg mb-10 leading-relaxed">
-          Upload any PDF. Ask questions in plain English. Get precise answers pulled directly from your document — not the internet.
-        </p>
-        <div className="flex items-center gap-5">
-          <Link
-            href="/login"
-            className="bg-primary text-primary-foreground px-7 py-3 rounded-xl font-medium hover:opacity-90 transition-opacity text-sm cursor-pointer"
-          >
-            Start for free
-          </Link>
-          <a href="#how-it-works" className="text-muted hover:text-foreground transition-colors text-sm cursor-pointer">
-            See how it works
-          </a>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="py-20 px-6 border-t border-border/40">
-        <div className="max-w-4xl mx-auto">
-          <Reveal>
-            <p className="text-muted text-xs uppercase tracking-widest text-center mb-12">The problem with studying today</p>
-          </Reveal>
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            {[
-              { stat: "68%", label: "of students spend under 5 hours weekly on assigned reading", source: "NSSE 2024" },
-              { stat: "14hrs", label: "average time per week students spend searching through academic material", source: "University Research" },
-              { stat: "6.3hrs", label: "is all first-year students actually spend on assigned reading weekly", source: "NSSE 2024" },
-            ].map(({ stat, label, source }, i) => (
-              <Reveal key={stat} delay={i * 100}>
-                <div className="flex flex-col gap-2 p-6">
-                  <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-5xl text-primary">{stat}</span>
-                  <p className="text-muted text-sm leading-relaxed">{label}</p>
-                  <p className="text-xs text-border">— {source}</p>
-                </div>
-              </Reveal>
-            ))}
+      {/* Hero Section */}
+      <section className="relative flex flex-col lg:flex-row items-center justify-between min-h-[95vh] px-8 pt-32 pb-20 max-w-7xl mx-auto overflow-hidden z-10">
+        {/* Left: Copy & CTA */}
+        <div className="flex flex-col items-start text-left max-w-xl z-10 w-full lg:w-[45%]">
+          
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border/50 bg-surface text-muted-foreground text-xs mb-6 font-medium shadow-sm">
+            Powered by Retrieval-Augmented Generation
           </div>
-        </div>
-      </section>
 
-      {/* Time Saved / Free Plan Value */}
-      <section className="py-28 px-6 border-t border-border/40 bg-surface/30">
-        <div className="max-w-5xl mx-auto">
-          <Reveal>
-            <p className="text-muted text-xs uppercase tracking-widest text-center mb-3">How much time we save you — FOR FREE</p>
-            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-4xl md:text-5xl font-normal text-center mb-16">
-              Your Free Account:<br /> Unlocking Time, Automatically.
-            </h2>
-          </Reveal>
-
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left: Data Cards */}
-            <div className="flex flex-col gap-5 order-2 md:order-1">
-              {[
-                { 
-                  icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />,
-                  title: "RECLAIM ~30 HOURS MONTHLY.", 
-                  desc: "Based on hypothetically saving 6 hours per complex paper, for 5 papers a month. That's time back in your life." 
-                },
-                { 
-                  icon: <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />,
-                  title: "PER DOCUMENT: SAVE 75% OF READING TIME.", 
-                  desc: "A brutal 10-hour research session becomes 2.5 hours of targeted queries, direct answers, and review." 
-                },
-                { 
-                  icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />,
-                  title: "10X FASTER INSIGHT.", 
-                  desc: "Spend 1 minute asking exactly what you need, instead of 1 hour skimming for keywords that might not even be there." 
-                }
-              ].map((item, i) => (
-                <Reveal key={i} delay={i * 100}>
-                  <div className="p-6 rounded-2xl border border-border/60 bg-background shadow-sm flex gap-5 items-start transition-all hover:border-primary/40">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        {item.icon}
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground text-sm mb-1.5">{item.title}</h4>
-                      <p className="text-muted text-sm leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-
-            {/* Right: Chart */}
-            <Reveal delay={200}>
-              <div className="p-8 rounded-3xl bg-background border border-border shadow-md order-1 md:order-2">
-                <div className="text-center mb-10">
-                  <h3 className="text-sm font-semibold mb-1 uppercase tracking-wide">Monthly Reading & Research Time</h3>
-                  <p className="text-xs text-muted">(Hypothetical Monthly Student Use)</p>
-                </div>
-                
-                <div className="flex items-end justify-center gap-16 h-64 border-b border-border/50 pb-2 relative ml-6">
-                  {/* Y-axis labels */}
-                  <div className="absolute -left-6 top-0 bottom-2 flex flex-col justify-between text-xs text-muted font-mono">
-                    <span>60h</span>
-                    <span>45h</span>
-                    <span>30h</span>
-                    <span>15h</span>
-                    <span>0h</span>
-                  </div>
-
-                  {/* Bar 1: Without ContextQ */}
-                  <div className="flex flex-col items-center gap-3 w-24 z-10 group">
-                    <div className="w-full bg-surface border border-border rounded-t-md h-[240px] relative transition-transform group-hover:-translate-y-1">
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 text-sm font-bold backdrop-blur-sm">60 hrs</div>
-                    </div>
-                    <span className="text-xs font-medium text-muted">Without ContextQ</span>
-                  </div>
-
-                  {/* Bar 2: With ContextQ */}
-                  <div className="flex flex-col items-center gap-3 w-24 z-10 group">
-                    <div className="w-full bg-primary rounded-t-md h-[120px] relative transition-transform group-hover:-translate-y-1">
-                       {/* Floating Saving Label */}
-                       <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap flex flex-col items-center animate-bounce">
-                         <span className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">You Save</span>
-                         <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-full border border-primary/20">~30 HOURS</span>
-                         <div className="w-px h-3 bg-primary/40 mt-1"></div>
-                       </div>
-                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-primary-foreground/20 text-sm font-bold text-primary-foreground">30 hrs</div>
-                    </div>
-                    <span className="text-xs font-medium text-foreground">With ContextQ <br/><span className="text-[10px] text-primary font-bold uppercase tracking-wider">(Free Plan)</span></span>
-                  </div>
-                </div>
-                <p className="text-[10px] text-muted text-center mt-8 italic leading-relaxed">*Example assumes a free tier usage and typical reading load. Your results will vary.</p>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="py-28 px-6 border-t border-border/40">
-        <div className="max-w-4xl mx-auto">
-          <Reveal>
-            <p className="text-muted text-xs uppercase tracking-widest text-center mb-3">How it works</p>
-            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-4xl font-normal text-center mb-16">From upload to insight in seconds</h2>
-          </Reveal>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { label: "Upload", title: "Drop your PDF", desc: "Lecture slides, textbooks, research papers, contracts. Any PDF." },
-              { label: "Ask", title: "Type your question", desc: "Ask like you would ask a professor who has read the whole thing." },
-              { label: "Read", title: "Get a precise answer", desc: "ContextQ searches semantically and returns a cited, accurate response." },
-            ].map(({ label, title, desc }, i) => (
-              <Reveal key={label} delay={i * 100}>
-                <div className="group flex flex-col gap-4 p-6 rounded-2xl bg-surface border border-border h-full hover:border-primary/40 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 cursor-default">
-                  <span className="text-xs text-muted uppercase tracking-widest font-mono">{label}</span>
-                  <h3 className="font-semibold text-foreground text-lg">{title}</h3>
-                  <p className="text-muted text-sm leading-relaxed">{desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="py-28 px-6 border-t border-border/40">
-        <div className="max-w-4xl mx-auto">
-          <Reveal>
-            <p className="text-muted text-xs uppercase tracking-widest text-center mb-3">Features</p>
-            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-4xl font-normal text-center mb-16">Built for people who read seriously</h2>
-          </Reveal>
-          <div className="grid md:grid-cols-2 gap-5">
-            {[
-              { title: "Streaming responses", desc: "Answers appear as they're generated. No waiting for the full response." },
-              { title: "Document vaults", desc: "Each document has its own isolated chat. Switch between them without losing context." },
-              { title: "Semantic search", desc: "Finds meaning, not just keywords. Understands what you're actually asking." },
-              { title: "Persistent history", desc: "Every conversation is saved. Come back days later and continue where you left off." },
-              { title: "Dark and light mode", desc: "A toggle that remembers your preference across sessions." },
-              { title: "Installable on mobile", desc: "Add to your home screen and use it like a native app, anywhere." },
-            ].map(({ title, desc }, i) => (
-              <Reveal key={title} delay={i * 80}>
-                <div className="group flex flex-col gap-2 p-5 rounded-xl bg-surface border border-border hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 cursor-default">
-                  <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">{title}</h3>
-                  <p className="text-muted text-sm leading-relaxed">{desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Reviews */}
-      <section className="py-28 px-6 border-t border-border/40">
-        <div className="max-w-4xl mx-auto">
-          <Reveal>
-            <p className="text-muted text-xs uppercase tracking-widest text-center mb-3">Reviews</p>
-            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-4xl font-normal text-center mb-16">What students say</h2>
-          </Reveal>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { name: "Pravar S.", role: "B.Tech CSE, MIT Manipal", review: "Finally stopped drowning in lecture notes. ContextQ finds exactly what I need in seconds." },
-              { name: "Your name here", role: "Leave a review", review: "Be among the first to share your experience. Reach out to add your review." },
-              { name: "Your name here", role: "Leave a review", review: "Be among the first to share your experience. Reach out to add your review." },
-            ].map(({ name, role, review }, i) => (
-              <Reveal key={i} delay={i * 100}>
-                <div className="group flex flex-col gap-5 p-6 rounded-2xl bg-surface border border-border h-full hover:border-primary/40 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 cursor-default">
-                  <p className="text-foreground text-sm leading-relaxed flex-1">"{review}"</p>
-                  <div className="border-t border-border/50 pt-4">
-                    <p className="font-medium text-sm text-foreground">{name}</p>
-                    <p className="text-muted text-xs mt-0.5">{role}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-28 px-6 border-t border-border/40 text-center">
-        <Reveal>
-          <div className="max-w-xl mx-auto">
-            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-5xl font-normal mb-4">Ready to actually understand your documents?</h2>
-            <p className="text-muted mb-8 leading-relaxed">Join students using ContextQ to cut study time and go deeper on what matters.</p>
+          <h1 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-6xl md:text-7xl lg:text-[5.5rem] font-normal tracking-tight leading-[1.1] mb-6">
+            Your documents<br/>can finally talk back.
+          </h1>
+          <p className="text-muted-foreground text-lg md:text-xl max-w-md mb-10 leading-relaxed">
+            Chat with any PDF. Get cited answers instantly without manually searching through hundreds of pages.
+          </p>
+          <div className="flex items-center gap-6">
             <Link
               href="/login"
-              className="bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium hover:opacity-90 transition-opacity text-sm inline-block cursor-pointer"
+              className="bg-foreground text-background px-8 py-4 rounded-full font-medium hover:-translate-y-1 hover:shadow-xl hover:shadow-foreground/10 transition-all text-sm flex items-center gap-2"
             >
-              Get started free
+              Upload your first PDF <span>→</span>
+            </Link>
+            <a href="#comparison" className="text-muted-foreground flex items-center gap-2 hover:text-foreground transition-colors text-sm font-medium group">
+              Learn More <span className="text-lg leading-none group-hover:translate-y-1 transition-transform">↓</span>
+            </a>
+          </div>
+          
+          <div className="mt-12 flex flex-col gap-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Built for</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-foreground/80 font-medium">
+              <span className="flex items-center gap-1.5"><span className="text-primary">✓</span> Lecture Notes</span>
+              <span className="flex items-center gap-1.5"><span className="text-primary">✓</span> Research Papers</span>
+              <span className="flex items-center gap-1.5"><span className="text-primary">✓</span> Tech Docs</span>
+              <span className="flex items-center gap-1.5"><span className="text-primary">✓</span> Contracts</span>
+              <span className="flex items-center gap-1.5"><span className="text-primary">✓</span> Books</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Actual Product Screenshot Wrapper */}
+        <div className="relative w-full lg:w-[55%] max-w-4xl mt-20 lg:mt-0 z-10 perspective-1000 pl-0 lg:pl-10">
+          
+          {/* Main App Window - Group added for hover effects */}
+          <div className="w-full aspect-[16/9] bg-surface rounded-xl shadow-2xl border border-border/40 animate-float -rotate-2 hover:rotate-0 transition-transform duration-700 ease-out flex flex-col group">
+            {/* macOS Style Browser Frame */}
+            <div className="h-10 border-b border-border/50 bg-background/80 backdrop-blur-sm flex items-center px-4 gap-2 rounded-t-xl z-20">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+                <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+              </div>
+            </div>
+            
+            {/* Screenshot Container */}
+            <div className="flex-1 w-full bg-background relative overflow-hidden rounded-b-xl z-10">
+                <Image
+                  src="/screenshot3.png" 
+                  alt="ContextQ Chat Interface" 
+                  fill
+                  priority
+                  className={`object-cover object-top transition-all duration-700 group-hover:scale-[1.02] ${
+                    imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-sm scale-105"
+                  }`}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement?.querySelector('.fallback')?.classList.remove('hidden');
+                  }}
+                />
+                
+                {/* Fallback if image is missing */}
+                <div className="fallback hidden absolute inset-0 flex flex-col items-center justify-center border-dashed border-2 border-border/50 m-4 rounded-lg bg-surface/50 text-muted-foreground">
+                    <svg className="w-12 h-12 text-primary/40 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <p className="font-medium text-foreground">Save your app screenshot as</p>
+                    <p className="text-sm mt-1 font-mono bg-background px-2 py-1 rounded">public/screenshot.webp</p>
+                </div>
+            </div>
+          </div>
+
+         
+          
+
+        </div>
+      </section>
+
+      {/* The RAG Comparison Section */}
+      <section id="comparison" className="py-32 px-8 z-10 relative">
+        <div className="max-w-5xl mx-auto">
+          <Reveal>
+            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-4xl md:text-5xl font-normal text-center mb-6">Stop reading. Start understanding.</h2>
+            <p className="text-muted-foreground text-center mb-16 max-w-xl mx-auto">Manual reading relies on exact keyword matching. ContextQ uses AI to understand the meaning of your document.</p>
+          </Reveal>
+          
+          <Reveal delay={150}>
+            <div className="grid md:grid-cols-2 bg-surface/50 border border-border/40 rounded-3xl overflow-hidden shadow-xl">
+              {/* Manual Reading (Bad) */}
+              <div className="p-8 md:p-12 border-b md:border-b-0 md:border-r border-border/40 relative">
+                <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-8">Manual Reading</div>
+                <ul className="space-y-6 text-muted-foreground">
+                  <li className="flex items-start gap-4">
+                    <svg className="w-5 h-5 text-destructive shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m15 9-6 6"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 9 6 6"/></svg>
+                    Scroll blindly through 200+ pages
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <svg className="w-5 h-5 text-destructive shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m15 9-6 6"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 9 6 6"/></svg>
+                    Ctrl+F hoping the exact word is there
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <svg className="w-5 h-5 text-destructive shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m15 9-6 6"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 9 6 6"/></svg>
+                    Lose your place switching between sections
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <svg className="w-5 h-5 text-destructive shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m15 9-6 6"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 9 6 6"/></svg>
+                    Manual, time-consuming note-taking
+                  </li>
+                </ul>
+              </div>
+
+              {/* ContextQ (Good) */}
+              <div className="p-8 md:p-12 bg-background relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[64px]" />
+                <div className="text-xs font-semibold uppercase tracking-widest text-primary mb-8 flex items-center gap-2">
+                  <Logo /> ContextQ
+                </div>
+                <ul className="space-y-6 text-foreground font-medium">
+                  <li className="flex items-start gap-4">
+                    <svg className="w-5 h-5 text-primary shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 12 2 2 4-4"/></svg>
+                    Ask one question in plain English
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <svg className="w-5 h-5 text-primary shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 12 2 2 4-4"/></svg>
+                    Semantic understanding (meaning, not just words)
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <svg className="w-5 h-5 text-primary shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 12 2 2 4-4"/></svg>
+                    Get an instant, accurate answer
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <svg className="w-5 h-5 text-primary shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 12 2 2 4-4"/></svg>
+                    AI provides clickable citations to prove it
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Bento Grid Features */}
+      <section id="features" className="py-32 px-8 bg-surface/30 z-10 relative border-y border-border/20">
+  <div className="max-w-5xl mx-auto">
+    <Reveal>
+      <h2
+        style={{ fontFamily: "'Instrument Serif', serif" }}
+        className="text-4xl md:text-5xl font-normal text-center mb-16"
+      >
+        Designed for deep work.
+      </h2>
+    </Reveal>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      {/* Feature 1 - Semantic Search */}
+      <Reveal
+        delay={100}
+        className="md:col-span-2 md:row-span-2 group relative overflow-hidden rounded-3xl bg-background border border-border/40 p-8 shadow-sm hover:shadow-md transition-all"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] transition-opacity opacity-0 group-hover:opacity-100" />
+
+        <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+
+        <h3 className="text-xl font-semibold mb-2">
+          Semantic Search
+        </h3>
+
+        <p className="text-muted-foreground text-sm max-w-sm relative z-10 mb-6">
+          Finds meaning, not just exact keywords. Ask naturally.
+        </p>
+
+        <div className="bg-surface border border-border/50 rounded-xl p-4 shadow-sm text-sm font-medium w-64 md:w-80 mt-8 relative z-10 group-hover:border-primary/20 transition-colors">
+
+          <div className="flex items-start gap-3 mb-3 text-muted-foreground">
+            <div className="w-6 h-10 rounded-full bg-secondary shrink-0 flex items-center justify-center text-[10px]">
+              You:
+            </div>
+
+            <div className="bg-background border border-border/40 rounded-lg rounded-tl-none p-2 text-xs">
+              Explain the mitochondria.
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-8 rounded-full bg-primary/20 text-primary shrink-0 flex items-center justify-center text-[10px]">
+              <Logo />
+            </div>
+
+            <div className="bg-primary/5 border border-primary/10 rounded-lg rounded-tl-none p-2 text-xs text-foreground">
+              It generates most of the cell's ATP...
+            </div>
+          </div>
+
+        </div>
+      </Reveal>
+
+
+      {/* Feature 2 - Private Docs */}
+      <Reveal
+        delay={150}
+        className="group relative overflow-hidden rounded-3xl bg-background border border-border/40 p-8 shadow-sm hover:shadow-md transition-all"
+      >
+        <div className="w-10 h-10 rounded-lg bg-surface border border-border flex items-center justify-center mb-6">
+          <svg className="w-5 h-5 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
+          </svg>
+        </div>
+
+        <h3 className="text-xl font-semibold mb-2">
+          Private Docs
+        </h3>
+
+        <p className="text-muted-foreground text-sm">
+          Your files remain yours. Isolated vaults for every document.
+        </p>
+      </Reveal>
+
+
+      {/* Feature 3 - Streaming AI */}
+      <Reveal
+        delay={200}
+        className="group relative overflow-hidden rounded-3xl bg-background border border-border/40 p-8 shadow-sm hover:shadow-md transition-all"
+      >
+        <div className="w-10 h-10 rounded-lg bg-surface border border-border flex items-center justify-center mb-6">
+          <svg className="w-5 h-5 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
+          </svg>
+        </div>
+
+        <h3 className="text-xl font-semibold mb-2">
+          Streaming AI
+        </h3>
+
+        <p className="text-muted-foreground text-sm">
+          Answers appear instantly as they're generated. Zero waiting time.
+        </p>
+      </Reveal>
+
+    </div>
+  </div>
+</section>
+
+      {/* FAQ Section */}
+      <section id="faq" className="py-32 px-8 z-10 relative">
+        <div className="max-w-3xl mx-auto">
+          <Reveal>
+            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-4xl md:text-5xl font-normal text-center mb-16">Frequently Asked</h2>
+          </Reveal>
+          <div className="space-y-4">
+            <Reveal delay={100}><Accordion q="Is my PDF private?" a="Yes. Your documents are stored securely and isolated in their own vaults. They are never used to train global AI models." /></Reveal>
+            <Reveal delay={150}><Accordion q="Does it hallucinate?" a="ContextQ is strictly constrained to the text within your uploaded document. If the answer isn't in the PDF, the AI is instructed to tell you it doesn't know." /></Reveal>
+            <Reveal delay={200}><Accordion q="Is there a free plan?" a="Yes. The free plan allows you to upload and query a limited number of standard-sized PDFs every month. You don't need a credit card to start." /></Reveal>
+            <Reveal delay={250}><Accordion q="What is the file size limit?" a="Currently, free users can upload PDFs up to 20MB or 120 pages. Premium users have significantly higher limits designed for massive textbooks and research collections." /></Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* Massive CTA */}
+      <section className="py-40 px-8 border-t border-border/20 text-center relative overflow-hidden z-10">
+        <div className="absolute inset-0 bg-primary/5 blur-[100px] pointer-events-none" />
+        <Reveal>
+          <div className="max-w-3xl mx-auto relative z-10">
+            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-5xl md:text-7xl font-normal mb-8 leading-[1.1]">
+              Ask your documents anything.
+            </h2>
+            <Link
+              href="/login"
+              className="bg-foreground text-background px-10 py-5 rounded-full font-medium hover:-translate-y-1 hover:shadow-xl hover:shadow-foreground/10 transition-all text-lg inline-flex items-center gap-2"
+            >
+              Upload your first PDF <span>→</span>
             </Link>
           </div>
         </Reveal>
       </section>
 
       {/* Footer */}
-      <footer className="py-16 px-8 border-t border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between gap-12 mb-12">
-            <div className="max-w-sm">
-              <div className="flex items-center gap-2.5 mb-3">
+      <footer className="py-12 px-8 border-t border-border/20 bg-background relative z-10">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 md:gap-4">
+          <div className="flex flex-col items-center md:items-start gap-4">
+            <div className="flex flex-col items-center md:items-start gap-2">
+              <div className="flex items-center gap-2">
                 <Logo />
-                <p className="font-semibold text-foreground">ContextQ</p>
+                <span className="font-semibold text-sm">ContextQ</span>
               </div>
-              <p className="text-muted text-sm leading-relaxed">AI-powered document intelligence for students and researchers. Upload any PDF and get instant, cited answers.</p>
+              <div className="text-xs text-muted-foreground mt-1">
+                © {new Date().getFullYear()} ContextQ. Built by Pravar.
+              </div>
             </div>
-            <div className="flex flex-wrap gap-16">
-              <div>
-                <p className="text-xs uppercase tracking-widest text-muted mb-4">Product</p>
-                <div className="flex flex-col gap-3">
-                  <Link href="/login" className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer">Get started</Link>
-                  <a href="#how-it-works" className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer">How it works</a>
-                  <a href="#features" className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer">Features</a>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-widest text-muted mb-4">Legal</p>
-                <div className="flex flex-col gap-3">
-                  <Link href="/terms" className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer">Terms of service</Link>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-widest text-muted mb-4">Links</p>
-                <div className="flex flex-col gap-3">
-                  <a href="https://github.com/Pr3v3r/contextq" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer">GitHub</a>
-                  <a href="https://linkedin.com/in/pravarsingh" target="_blank" rel="noopener noreferrer" className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer">LinkedIn</a>
-                  <a href="mailto:11pravar.singh11@gmail.com" className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer">Email</a>
-                </div>
-              </div>
+            {/* Status Indicator */}
+            <div className="flex items-center gap-2 mt-2">
+               <span className="relative flex h-2.5 w-2.5">
+                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+               </span>
+               <Link href="/status" className="text-xs text-muted-foreground font-medium hover:text-foreground transition-colors">All systems operational</Link>
             </div>
           </div>
-          <div className="flex items-center justify-between pt-8 border-t border-border/40">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-              <span className="text-muted text-xs">All systems operational</span>
-            </div>
-            <p className="text-muted text-xs">© 2026 ContextQ. Built by Pravar Singh.</p>
+          
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm text-muted-foreground font-medium">
+            <a href="#comparison" className="hover:text-foreground transition-colors">Why ContextQ</a>
+            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+            <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+            <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm text-muted-foreground font-medium">
+            <a href="https://github.com/Pr3v3r/contextq" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" /></svg>
+              Stars
+            </a>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           </div>
         </div>
       </footer>
-
     </main>
   );
 }

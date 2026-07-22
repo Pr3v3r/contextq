@@ -178,14 +178,27 @@ async def ask(request: dict):
     # Construct prompt
     context = "\n\n".join([f"Excerpt {i+1}:\n{chunk}" for i, chunk in enumerate(chunks)])
     
-    prompt = f"""You are a helpful assistant that answers questions based on the provided document excerpts.
-    
+    prompt = f"""You are ContextQ, an AI assistant that answers questions using ONLY the provided document excerpts.
+
 Document excerpts:
 {context}
 
-Question: {question}
+Question:
+{question}
 
-Answer the question based only on the provided excerpts. If the answer cannot be found in the excerpts, say so clearly."""
+Instructions:
+- Use Markdown formatting.
+- Use headings (##) when appropriate.
+- Keep paragraphs short (2-3 sentences max).
+- Use bullet points whenever listing information.
+- Use numbered lists for steps.
+- Bold important terms.
+- Never write one giant paragraph.
+- Do not invent information.
+- If the answer is not contained in the excerpts, clearly say so.
+
+Answer:
+"""
     
     # Call Gemini
     response = gemini_client.models.generate_content(
