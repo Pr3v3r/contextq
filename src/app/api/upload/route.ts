@@ -1,9 +1,12 @@
 import { auth } from "@/auth";
-import { writeFile, mkdir } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
-import path from "path";
 import { prisma } from "@/lib/prisma";
+import { createClient } from "@supabase/supabase-js";
 
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+);
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -26,18 +29,25 @@ export async function POST(req: NextRequest) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDir, { recursive: true });
-
+  // Upload to Supabase Storage instead of local filesystem
   const filename = `${Date.now()}-${file.name.replace(/\s/g, "_")}`;
-  const filepath = path.join(uploadDir, filename);
+  const { error: uploadError } = await supabase.storage
+    .from("pdfs")
+    .upload(filename, buffer, { contentType: "application/pdf" });
 
-  await writeFile(filepath, buffer);
+  if (uploadError) {
+    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+  }
 
+  const { data: { publicUrl } } = supabase.storage
+    .from("pdfs")
+    .getPublicUrl(filename);
+
+  // Send to FastAPI for processing
   const fastApiForm = new FormData();
   fastApiForm.append("file", new Blob([buffer], { type: "application/pdf" }), filename);
 
-  const fastApiRes = await fetch("http://localhost:8000/process-pdf", {
+  const fastApiRes = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_URL}/process-pdf`, {
     method: "POST",
     body: fastApiForm,
   });
@@ -48,8 +58,9 @@ export async function POST(req: NextRequest) {
   }
 
   const fastApiData = await fastApiRes.json();
+
   await (prisma as any).document.upsert({
-        where: {
+    where: {
       userId_documentId: {
         userId: session.user!.id!,
         documentId: fastApiData.document_id,
@@ -64,12 +75,11 @@ export async function POST(req: NextRequest) {
     }
   });
 
-  return NextResponse.json({ 
-    success: true, 
+  return NextResponse.json({
+    success: true,
     filename,
-    path: `/uploads/${filename}`,
+    path: publicUrl,
     document_id: fastApiData.document_id,
     total_chunks: fastApiData.total_chunks,
   });
-  
 }

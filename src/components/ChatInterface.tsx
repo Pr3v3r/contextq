@@ -24,7 +24,7 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        const res = await fetch(`/api/messages?documentId=${documentId}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_URL}/ask-stream`);
         const data = await res.json();
         if (data.messages) {
           setMessages(data.messages.map((m: any) => ({
