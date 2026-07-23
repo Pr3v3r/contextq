@@ -71,7 +71,7 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
     let firstChunk = true;
 
     try {
-      const res = await fetch("http://localhost:8000/ask-stream", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_URL}/ask-stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: input, document_id: documentId }),
